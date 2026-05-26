@@ -1,0 +1,91 @@
+name: Refresh predictor dataset
+
+on:
+  schedule:
+    # daily refresh, 07:00 UTC
+    - cron: '0 7 * * *'
+    # extra month-end safety net: 1st of each month, 07:00 UTC
+    - cron: '0 7 1 * *'
+  workflow_dispatch:
+
+# prevent overlapping runs (e.g. the 1st-of-month trigger colliding with the daily one)
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to push refreshed Excel files back to the repo
+    env:
+      R_KEEP_PKG_SOURCE: yes
+      GDRIVE_SA_KEY:    ${{ runner.temp }}/gdrive-sa.json
+      GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.4'
+          use-public-rspm: true
+
+      - name: Install system build deps
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends libcurl4-openssl-dev libxml2-dev libssl-dev
+
+      - name: Install R packages
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::tidyquant
+            any::dplyr
+            any::tidyr
+            any::purrr
+            any::lubridate
+            any::readxl
+            any::stringr
+            any::janitor
+            any::magrittr
+            any::openxlsx
+            any::readr
+            any::TTR
+            any::PerformanceAnalytics
+            any::Rcpp
+            any::RcppArmadillo
+            any::googledrive
+            any::tibble
+
+      - name: Write Google service-account key
+        env:
+          GDRIVE_SA_JSON: ${{ secrets.GDRIVE_SA_JSON }}
+        run: |
+          if [ -z "$GDRIVE_SA_JSON" ]; then
+            echo "::error::Missing GDRIVE_SA_JSON secret"
+            exit 1
+          fi
+          printf '%s' "$GDRIVE_SA_JSON" > "$GDRIVE_SA_KEY"
+          chmod 600 "$GDRIVE_SA_KEY"
+
+      - name: Run pipeline
+        run: Rscript download_data.R
+
+      - name: Commit refreshed dataset
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/short/PredictorData.xlsx data/long/PredictorData.xlsx
+          if git diff --cached --quiet; then
+            echo "No data changes to commit."
+          else
+            git commit -m "data: refresh $(date -u +%Y-%m-%d)"
+            git push
+          fi
+
+      - name: Clean up credentials
+        if: always()
+        run: rm -f "$GDRIVE_SA_KEY"

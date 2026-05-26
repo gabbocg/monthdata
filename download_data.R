@@ -356,36 +356,64 @@ rm(wb)
 
 cat(">> Uploading to Google Drive...\n")
 
-# find or create folder structure in Drive
+# Authenticate. In CI a service-account JSON key is provided via
+# GDRIVE_SA_KEY (file path). Locally we fall through to the cached
+# OAuth token from googledrive's gargle cache.
+sa_key <- Sys.getenv("GDRIVE_SA_KEY", unset = "")
+
+if (nzchar(sa_key)) {
+
+  cat("   Authenticating with Google service account...\n")
+  googledrive::drive_auth(path = sa_key)
+
+}
+
+# Resolve the parent "monthdata" folder.
+#   - GDRIVE_FOLDER_ID (CI): id of a folder shared with the service
+#     account. Used directly because service accounts cannot search
+#     the user's My Drive.
+#   - Local: look up (or create) a folder literally named "monthdata"
+#     in the authenticated user's Drive.
+parent_id <- Sys.getenv("GDRIVE_FOLDER_ID", unset = "")
+
 drive_find_or_mkdir <- function(name, path = NULL) {
-  
+
   existing <- if (is.null(path)) {
-    
+
     googledrive::drive_find(
       pattern = paste0("^", name, "$"),
       type = "folder", n_max = 1
     )
-    
+
   } else {
-    
+
     googledrive::drive_ls(path, type = "folder") |>
       dplyr::filter(name == !!name)
-    
+
   }
-  
+
   if (nrow(existing) > 0) {
-    
+
     return(existing[1, ])
-    
+
   }
-  
+
   googledrive::drive_mkdir(name, path = path)
-  
+
 }
 
-root_folder  <- drive_find_or_mkdir("monthdata")
+root_folder <- if (nzchar(parent_id)) {
+
+  googledrive::as_id(parent_id)
+
+} else {
+
+  drive_find_or_mkdir("monthdata")
+
+}
+
 short_folder <- drive_find_or_mkdir("short", root_folder)
-long_folder  <- drive_find_or_mkdir("long", root_folder)
+long_folder  <- drive_find_or_mkdir("long",  root_folder)
 
 # helper: upload or update
 drive_put_file <- function(local, folder, name) {
