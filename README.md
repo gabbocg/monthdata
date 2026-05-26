@@ -75,7 +75,7 @@ The latest refresh of both workbooks is published to Google Drive and updated au
 For a direct `.xlsx` download instead of the in-browser viewer: 
 
 - [Short Data](https://docs.google.com/spreadsheets/d/1t9lgsI_JUWdkEaZsyfm_sd85m7NHStlH/export?format=xlsx) 
-- [Long Data](https://docs.google.com/spreadsheets/d/1MwsjDhoAaUnnIdwKRcmBsPSOgvxFlIzk/export?format=xlsx).
+- [Long Data](https://docs.google.com/spreadsheets/d/1MwsjDhoAaUnnIdwKRcmBsPSOgvxFlIzk/export?format=xlsx)
 
 ## Usage
 
