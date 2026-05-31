@@ -1,7 +1,7 @@
 # ---------------------------------------------------------------
 # FRED-MD Macroeconomic Dataset
 # Source: McCracken & Ng, St. Louis Fed
-# Processing: github.com/GabboCg/fredmd
+# Processing: github.com/gabbocg/fredmd
 #
 # Full pipeline (matching fredmd/load.R):
 #   1. Download latest FRED-MD CSV
@@ -23,7 +23,7 @@ download_fred_md <- function(fredmd_path = "fredmd", demean = 2, jj = 2, kmax = 
     system2(
       "git",
       c("clone",
-        "https://github.com/GabboCg/fredmd.git",
+        "https://github.com/gabbocg/fredmd.git",
         fredmd_path),
       stdout = FALSE, stderr = FALSE
     )
