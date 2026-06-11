@@ -65,6 +65,9 @@ download_sp500 <- function(from = "1927-12-01", to = Sys.Date()) {
   
   # monthly close and volume
   sp500_monthly <- sp500_daily |>
+    # Yahoo sometimes returns a pre-market stub row with NA close/volume for the
+    # current trading day; drop it so last(close)/sum(volume) don't pick up NA.
+    dplyr::filter(!is.na(close)) |>
     dplyr::mutate(
       month = lubridate::month(date),
       year  = lubridate::year(date)
