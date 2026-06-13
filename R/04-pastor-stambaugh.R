@@ -18,20 +18,29 @@ download_pastor_stambaugh <- function() {
   on.exit(options(timeout = old_timeout), add = TRUE)
 
   ok <- FALSE
+  
   for (url in urls) {
     for (attempt in 1:3) {
+
       res <- try(
         utils::download.file(url, tmp, mode = "w", quiet = TRUE),
         silent = TRUE
       )
+      
       if (!inherits(res, "try-error") && file.exists(tmp) && file.info(tmp)$size > 0) {
         ok <- TRUE
         break
+
       }
+
       Sys.sleep(2 * attempt)
+
     }
+
     if (ok) break
+
   }
+
   if (!ok) stop("Failed to download Pastor-Stambaugh liquidity data after retries.")
   
   # read skipping comment lines (start with %)
