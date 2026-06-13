@@ -7,9 +7,32 @@ download_pastor_stambaugh <- function() {
   
   cat(">> Downloading Pastor-Stambaugh liquidity factor...\n")
   
-  url <- "https://faculty.chicagobooth.edu/-/media/faculty/lubos-pastor/data/liq_data_1962_2024.txt"
+  urls <- c(
+    "https://faculty.chicagobooth.edu/-/media/faculty/lubos-pastor/data/liq_data_1962_2025.txt",
+    "https://faculty.chicagobooth.edu/-/media/faculty/lubos-pastor/data/liq_data_1962_2024.txt"
+  )
   tmp <- tempfile(fileext = ".txt")
-  download.file(url, tmp, mode = "w", quiet = TRUE)
+
+  old_timeout <- getOption("timeout")
+  options(timeout = max(300, old_timeout))
+  on.exit(options(timeout = old_timeout), add = TRUE)
+
+  ok <- FALSE
+  for (url in urls) {
+    for (attempt in 1:3) {
+      res <- try(
+        utils::download.file(url, tmp, mode = "w", quiet = TRUE),
+        silent = TRUE
+      )
+      if (!inherits(res, "try-error") && file.exists(tmp) && file.info(tmp)$size > 0) {
+        ok <- TRUE
+        break
+      }
+      Sys.sleep(2 * attempt)
+    }
+    if (ok) break
+  }
+  if (!ok) stop("Failed to download Pastor-Stambaugh liquidity data after retries.")
   
   # read skipping comment lines (start with %)
   lines <- readLines(tmp)
