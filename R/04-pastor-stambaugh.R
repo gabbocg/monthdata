@@ -11,6 +11,7 @@ download_pastor_stambaugh <- function() {
     "https://faculty.chicagobooth.edu/-/media/faculty/lubos-pastor/data/liq_data_1962_2025.txt",
     "https://faculty.chicagobooth.edu/-/media/faculty/lubos-pastor/data/liq_data_1962_2024.txt"
   )
+  
   tmp <- tempfile(fileext = ".txt")
 
   old_timeout <- getOption("timeout")
@@ -18,16 +19,39 @@ download_pastor_stambaugh <- function() {
   on.exit(options(timeout = old_timeout), add = TRUE)
 
   ok <- FALSE
-  
+
+  ua <- paste0(
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ",
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+  )
+
+  curl_extra <- c(
+    "--silent", "--show-error", "--location",
+    "--max-time", "60",
+    "--user-agent", shQuote(ua)
+  )
+
   for (url in urls) {
+
     for (attempt in 1:3) {
 
+      if (file.exists(tmp)) unlink(tmp)
+
       res <- try(
-        utils::download.file(url, tmp, mode = "w", quiet = TRUE),
+        utils::download.file(
+          url, tmp,
+          mode   = "wb",
+          quiet  = TRUE,
+          method = "curl",
+          extra  = curl_extra
+        ),
         silent = TRUE
       )
-      
-      if (!inherits(res, "try-error") && file.exists(tmp) && file.info(tmp)$size > 0) {
+
+      if (!inherits(res, "try-error") &&
+            file.exists(tmp) &&
+            file.info(tmp)$size > 0) {
+
         ok <- TRUE
         break
 
@@ -41,12 +65,14 @@ download_pastor_stambaugh <- function() {
 
   }
 
-  if (!ok) stop("Failed to download Pastor-Stambaugh liquidity data after retries.")
-  
+  if (!ok) {
+    stop("Failed to download Pastor-Stambaugh liquidity data after retries.")
+  }
+
   # read skipping comment lines (start with %)
   lines <- readLines(tmp)
   unlink(tmp)
-  
+
   data_lines <- lines[!grepl("^%", lines) & trimws(lines) != ""]
   df <- utils::read.table(text = data_lines, header = FALSE, fill = TRUE)
   colnames(df) <- c("yyyymm", "agg_liq", "innov_liq", "traded_liq")
