@@ -11,7 +11,9 @@ download_pastor_stambaugh <- function() {
     "https://faculty.chicagobooth.edu/-/media/faculty/lubos-pastor/data/liq_data_1962_2025.txt",
     "https://faculty.chicagobooth.edu/-/media/faculty/lubos-pastor/data/liq_data_1962_2024.txt"
   )
-  
+
+  cache_path <- file.path("data", "cache", "liq_data_latest.txt")
+
   tmp <- tempfile(fileext = ".txt")
 
   old_timeout <- getOption("timeout")
@@ -25,8 +27,11 @@ download_pastor_stambaugh <- function() {
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
   )
 
+  # -4 forces IPv4; GitHub Actions IPv6 routes to this host hang.
   curl_extra <- c(
     "--silent", "--show-error", "--location",
+    "-4",
+    "--connect-timeout", "30",
     "--max-time", "60",
     "--user-agent", shQuote(ua)
   )
@@ -66,7 +71,18 @@ download_pastor_stambaugh <- function() {
   }
 
   if (!ok) {
-    stop("Failed to download Pastor-Stambaugh liquidity data after retries.")
+    if (file.exists(cache_path) && file.info(cache_path)$size > 0) {
+      cat("   Live download failed; using cached copy at ",
+          cache_path, "\n", sep = "")
+      file.copy(cache_path, tmp, overwrite = TRUE)
+      ok <- TRUE
+    } else {
+      stop("Failed to download Pastor-Stambaugh data ",
+           "and no cache available.")
+    }
+  } else {
+    dir.create(dirname(cache_path), showWarnings = FALSE, recursive = TRUE)
+    file.copy(tmp, cache_path, overwrite = TRUE)
   }
 
   # read skipping comment lines (start with %)
