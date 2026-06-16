@@ -86,7 +86,11 @@ jobs:
             echo "No data changes to commit."
           else
             git commit -m "data: refresh $(date -u +%Y-%m-%d)"
-            git push
+            for i in 1 2 3; do
+              git pull --rebase --autostash origin main && git push && break
+              echo "Push attempt $i failed; retrying..."
+              sleep 5
+            done
           fi
 
       - name: Clean up credentials
