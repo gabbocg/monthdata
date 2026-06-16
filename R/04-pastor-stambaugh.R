@@ -71,18 +71,25 @@ download_pastor_stambaugh <- function() {
   }
 
   if (!ok) {
+
     if (file.exists(cache_path) && file.info(cache_path)$size > 0) {
-      cat("   Live download failed; using cached copy at ",
-          cache_path, "\n", sep = "")
+      
+      cat("   Live download failed; using cached copy at ", cache_path, "\n", sep = "")
       file.copy(cache_path, tmp, overwrite = TRUE)
+      
       ok <- TRUE
+
     } else {
-      stop("Failed to download Pastor-Stambaugh data ",
-           "and no cache available.")
+
+      stop("Failed to download Pastor-Stambaugh data ", "and no cache available.")
+
     }
+
   } else {
+
     dir.create(dirname(cache_path), showWarnings = FALSE, recursive = TRUE)
     file.copy(tmp, cache_path, overwrite = TRUE)
+    
   }
 
   # read skipping comment lines (start with %)
