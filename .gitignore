@@ -1,11 +1,21 @@
+# R
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
+
+# OS
 .DS_Store
+
+# Output
 Output/
 
+# Dependencies
 fredmd/
 
+# Claude Code
 CLAUDE.md
+.claude/
+
+# References
 refs/
