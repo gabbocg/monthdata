@@ -12,14 +12,17 @@ download_cochrane_piazzesi <- function(from = "1952-01-01", to = Sys.Date()) {
   
   tickers <- c("TB3MS", "GS1", "GS2", "GS5", "GS10")
   
-  yields_raw <- tidyquant::tq_get(
+  yields_raw <- tq_get_retry(
     tickers,
-    get  = "economic.data",
-    from = from,
-    to   = as.character(to)
+    get    = "economic.data",
+    from   = from,
+    to     = as.character(to),
+    expect = tickers,
+    label  = "FRED yield curve series"
   ) |>
     tidyr::pivot_wider(names_from = symbol, values_from = price) |>
     janitor::clean_names() |>
+    require_cols(tolower(tickers), what = "FRED yield curve data") |>
     tidyr::drop_na()
   
   # Cochrane-Piazzesi (2005) approach:

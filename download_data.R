@@ -50,80 +50,10 @@ library(TTR)
 library(googledrive)
 
 # ------------------------------------------
-# Override quantmod's FRED downloader to use system curl. The default
-# `curl::curl()` connection sometimes fails against FRED's HTTP/2 server
-# with "HTTP/2 stream not closed cleanly" errors on macOS/libcurl. Using
-# the system curl binary avoids that codepath.
+# Shared download helpers + the system-curl FRED downloader override.
 # ------------------------------------------
-assignInNamespace("getSymbols.FRED", function(Symbols, env, return.class = "xts", ...) {
-  
-  args <- list(...)
-  verbose      <- isTRUE(args$verbose)
-  auto.assign  <- if (is.null(args$auto.assign)) TRUE else isTRUE(args$auto.assign)
-  warnings     <- if (is.null(args$warnings))    TRUE else isTRUE(args$warnings)
-  from         <- if (is.null(args$from))        ""   else args$from
-  to           <- if (is.null(args$to))          ""   else args$to
-  
-  FRED.URL  <- "https://fred.stlouisfed.org/graph/fredgraph.csv?id="
-  returnSym <- Symbols
-  noDataSym <- NULL
-  fr <- NULL
-  
-  for (i in seq_along(Symbols)) {
-    
-    sym <- Symbols[[i]]
-    
-    if (verbose) cat("downloading ", sym, ".....\n\n")
-    test <- try({
-      
-      tmp_file <- tempfile(fileext = ".csv")
-      utils::download.file(
-        paste0(FRED.URL, sym), tmp_file,
-        method = "curl", mode = "wb", quiet = TRUE,
-        extra = "--silent --retry 3"
-      )
-      
-      raw <- utils::read.csv(tmp_file, na.strings = ".")
-      unlink(tmp_file)
-      
-      fr  <- xts::xts(
-        as.matrix(raw[, -1]),
-        as.Date(raw[, 1], origin = "1970-01-01"),
-        src = "FRED", updated = Sys.time()
-      )
-      
-      dim(fr) <- c(NROW(fr), 1)
-      colnames(fr) <- toupper(sym)
-      fr <- fr[paste(from, to, sep = "/")]
-      fr <- quantmod:::convert.time.series(fr = fr, return.class = return.class)
-      
-      if (auto.assign) {
-        
-        assign(toupper(gsub("\\^", "", sym)), fr, env)
-        
-      }
-      
-    }, silent = TRUE)
-    
-    if (inherits(test, "try-error")) {
-      
-      msg <- paste0("Unable to import ", dQuote(sym), ".\n",
-                    attr(test, "condition")$message)
-      if (isTRUE(warnings)) warning(msg, call. = FALSE, immediate. = TRUE)
-      noDataSym <- c(noDataSym, sym)
-      
-    }
-    
-  }
-  
-  if (auto.assign) return(setdiff(returnSym, noDataSym))
-  fr
-  
-},
-
-ns = "quantmod"
-
-)
+source("R/00-utils.R")
+install_fred_downloader()
 
 # source all modules
 source("R/01-sp500.R")

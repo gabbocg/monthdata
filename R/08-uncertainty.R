@@ -17,11 +17,12 @@ download_uncertainty <- function(from = "1959-01-01", to = Sys.Date()) {
   
   # --- EPU from FRED ---
   cat("   EPU from FRED...\n")
-  epu <- tidyquant::tq_get(
+  epu <- tq_get_retry(
     "USEPUINDXM",
-    get  = "economic.data",
-    from = from,
-    to   = as.character(to)
+    get   = "economic.data",
+    from  = from,
+    to    = as.character(to),
+    label = "EPU (USEPUINDXM, FRED)"
   ) |>
     dplyr::mutate(
       month  = lubridate::month(date),

@@ -73,6 +73,9 @@ jobs:
           # expose path to subsequent steps (download_data.R reads $GDRIVE_SA_KEY)
           echo "GDRIVE_SA_KEY=$KEY_PATH" >> "$GITHUB_ENV"
 
+      - name: Run tests
+        run: Rscript tests/test-fetch-retry.R
+
       - name: Run pipeline
         run: Rscript download_data.R
 

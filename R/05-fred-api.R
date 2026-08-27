@@ -9,14 +9,17 @@ download_fred_api <- function(from = "1959-01-01", to = Sys.Date()) {
   
   tickers <- c("INDPRO", "M1SL", "TCU", "PAYEMS", "UMCSENT", "HOUST")
   
-  fred_raw <- tidyquant::tq_get(
+  fred_raw <- tq_get_retry(
     tickers,
-    get          = "economic.data",
-    from         = from,
-    to           = as.character(to)
+    get    = "economic.data",
+    from   = from,
+    to     = as.character(to),
+    expect = tickers,
+    label  = "FRED macro series"
   ) |>
     tidyr::pivot_wider(names_from = symbol, values_from = price) |>
-    janitor::clean_names()
+    janitor::clean_names() |>
+    require_cols(tolower(tickers), what = "FRED macro data")
   
   fred_api <- fred_raw |>
     dplyr::mutate(

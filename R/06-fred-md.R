@@ -133,11 +133,12 @@ download_fred_md <- function(fredmd_path = "fredmd", demean = 2, jj = 2, kmax = 
   # Pull directly from FRED and apply tcode 6 (2nd log diff) to match the
   # FRED-MD transformation convention.
   cat("   Adding MZMSL from FRED (tcode 6)...\n")
-  mzmsl_raw <- tidyquant::tq_get(
+  mzmsl_raw <- tq_get_retry(
     "MZMSL",
-    get  = "economic.data",
-    from = "1959-01-01",
-    to   = as.character(Sys.Date())
+    get   = "economic.data",
+    from  = "1959-01-01",
+    to    = as.character(Sys.Date()),
+    label = "MZMSL (FRED)"
   ) |>
     dplyr::arrange(date) |>
     dplyr::mutate(

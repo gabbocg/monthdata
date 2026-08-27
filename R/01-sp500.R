@@ -7,11 +7,12 @@ download_sp500 <- function(from = "1927-12-01", to = Sys.Date()) {
   
   cat(">> Downloading S&P 500 daily data from Yahoo Finance...\n")
   
-  sp500_daily <- tidyquant::tq_get(
-    x    = "^GSPC",
-    get  = "stock.prices",
-    from = from,
-    to   = as.character(to)
+  sp500_daily <- tq_get_retry(
+    x     = "^GSPC",
+    get   = "stock.prices",
+    from  = from,
+    to    = as.character(to),
+    label = "S&P 500 (^GSPC, Yahoo Finance)"
   )
   
   # daily squared log-returns

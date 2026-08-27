@@ -7,11 +7,12 @@ download_usrec <- function(from = "1925-01-01", to = Sys.Date()) {
   
   cat(">> Downloading US recession indicator from FRED...\n")
   
-  usrec <- tidyquant::tq_get(
+  usrec <- tq_get_retry(
     "USREC",
-    get  = "economic.data",
-    from = from,
-    to   = as.character(to)
+    get   = "economic.data",
+    from  = from,
+    to    = as.character(to),
+    label = "USREC (FRED)"
   ) |>
     dplyr::rename(usrec = price) |>
     dplyr::mutate(
